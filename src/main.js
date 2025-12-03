@@ -28,6 +28,9 @@ function init() {
     dirLight.position.set(5, 3, 5);
     scene.add(dirLight);
 
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+    scene.add(ambientLight);
+
     animate();
 }
 

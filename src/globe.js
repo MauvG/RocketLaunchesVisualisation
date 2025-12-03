@@ -12,7 +12,7 @@ export function buildGlobe() {
         bumpScale: 0.05,
         specularMap: textureLoader.load("assets/textures/earth_specular_map.tif"),
         specular: new THREE.Color(0x333333),
-        shininess: 10
+        shininess: 10,
     });
 
     const earth = new THREE.Mesh(earthGeometry, earthMaterial);
@@ -30,7 +30,7 @@ export function buildGlobe() {
     const atmosphereMaterial = new THREE.MeshBasicMaterial({
         color: 0x4dacff,
         transparent: true,
-        opacity: 0.15,
+        opacity: 0.1,
     });
     const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
     group.add(atmosphere);
