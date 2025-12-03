@@ -1,0 +1,30 @@
+{
+  "dependencies": {
+    "three": "^0.181.2"
+  },
+  "name": "rocketlaunchesvisualisation",
+  "version": "1.0.0",
+  "description": "Readme",
+  "main": "index.js",
+  "devDependencies": {
+    "vite": "^7.2.6"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MauvG/RocketLaunchesVisualisation.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/MauvG/RocketLaunchesVisualisation/issues"
+  },
+  "homepage": "https://github.com/MauvG/RocketLaunchesVisualisation#readme"
+}
