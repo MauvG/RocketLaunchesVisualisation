@@ -34,9 +34,36 @@ async function init() {
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
   scene.add(ambientLight);
 
-  const launchData = await loadCSV("/data/space_missions_geocoded.csv");
-  const launchMarkers = createLaunchMarkers(launchData);
-  scene.add(launchMarkers);
+  let launchData = [];
+  let launchMarkersGroup;
+
+  launchData = await loadCSV("/data/space_missions_geocoded.csv");
+
+  launchMarkersGroup = new THREE.Group();
+  scene.add(launchMarkersGroup);
+
+  function updateMarkers(year) {
+    launchMarkersGroup.clear();
+
+    const filtered = launchData.filter((d) => {
+      const launchYear = new Date(d.Date).getFullYear();
+      return launchYear === year;
+    });
+
+    const markers = createLaunchMarkers(filtered);
+    launchMarkersGroup.add(markers);
+  }
+
+  updateMarkers(1957);
+
+  const slider = document.getElementById("yearSlider");
+  const label = document.getElementById("yearLabel");
+
+  slider.addEventListener("input", (e) => {
+    const year = parseInt(e.target.value);
+    label.textContent = `Year: ${year}`;
+    updateMarkers(year);
+  });
 
   animate();
 }

@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { latLonToVector3 } from "./utils/geo.js";
 
-export function createLaunchMarkers(data, radius = 1.49) {
+export function createLaunchMarkers(data, radius = 1.5) {
   const positions = [];
   const colors = [];
 
@@ -35,7 +35,7 @@ export function createLaunchMarkers(data, radius = 1.49) {
   geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
 
   const material = new THREE.PointsMaterial({
-    size: 0.01,
+    size: 0.05,
     map: new THREE.TextureLoader().load("/textures/circle.png"),
     transparent: true,
     alphaTest: 0.5,

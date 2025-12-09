@@ -1,19 +1,40 @@
 body {
-    margin: 0;
-    overflow: hidden;
-    background-color: #000;
-    font-family: Arial, sans-serif;
+  margin: 0;
+  overflow: hidden;
+  background-color: #000;
+  font-family: Arial, sans-serif;
 }
 
 #infoPanel {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    padding: 12px;
-    color: white;
-    background: rgba(0, 0, 0, 0.6);
-    display: none;
-    border-radius: 6px;
-    max-width: 280px;
-    backdrop-filter: blur(6px);
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  padding: 12px;
+  color: white;
+  background: rgba(0, 0, 0, 0.6);
+  display: none;
+  border-radius: 6px;
+  max-width: 280px;
+  backdrop-filter: blur(6px);
+}
+
+#time-ui {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  text-align: center;
+  z-index: 10;
+  color: white;
+  font-family: sans-serif;
+}
+
+#yearSlider {
+  width: 100%;
+}
+
+#yearLabel {
+  margin-top: 6px;
+  font-size: 14px;
 }
