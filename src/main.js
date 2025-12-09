@@ -37,8 +37,32 @@ async function init() {
   scene.add(ambientLight);
 
   raycaster = new THREE.Raycaster();
-  raycaster.params.Points.threshold = 0.15;
   mouse = new THREE.Vector2();
+
+  const PICK_PIXEL_RADIUS = 8;
+
+  function pixelRadiusToWorldDistance(
+    px,
+    worldPoint = new THREE.Vector3(0, 0, 0)
+  ) {
+    const proj = worldPoint.clone().project(camera);
+
+    const ndcDx = (px / renderer.domElement.clientWidth) * 2;
+    const ndcDy = (px / renderer.domElement.clientHeight) * 2;
+
+    const p1 = new THREE.Vector3(proj.x, proj.y, proj.z);
+    const p2 = new THREE.Vector3(proj.x + ndcDx, proj.y, proj.z);
+
+    p1.unproject(camera);
+    p2.unproject(camera);
+
+    return p1.distanceTo(p2);
+  }
+
+  raycaster.params.Points.threshold = pixelRadiusToWorldDistance(
+    PICK_PIXEL_RADIUS,
+    new THREE.Vector3(0, 0, 0)
+  );
 
   let launchData = [];
 
@@ -52,22 +76,29 @@ async function init() {
   function onClick(event) {
     if (!launchMarkersGroup.children.length) return;
 
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
     camera.updateMatrixWorld();
     const points = launchMarkersGroup.children[0];
+    if (!points) return;
     points.updateMatrixWorld();
 
-    raycaster.setFromCamera(mouse, camera);
+    raycaster.params.Points.threshold = pixelRadiusToWorldDistance(
+      PICK_PIXEL_RADIUS,
+      new THREE.Vector3(0, 0, 0)
+    );
 
+    raycaster.setFromCamera(mouse, camera);
     const intersects = raycaster.intersectObject(points);
 
-    if (intersects.length === 0) return;
+    if (intersects.length === 0) {
+      return;
+    }
 
     const index = intersects[0].index;
     const launch = points.userData.launches[index];
-
     showLaunchInfo(launch);
   }
 
