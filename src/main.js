@@ -41,6 +41,9 @@ export default async function main() {
 
     updateMarkers(year);
     drawLaunchChart(yearlyData, year, onYearClick);
+
+    const outcomes = aggregateOutcomeByYear(launchData, year);
+    drawOutcomeChart(outcomes);
   }
 
   const initialYear = (slider && parseInt(slider.value, 10)) || 2000;
@@ -211,6 +214,87 @@ function setupChartCanvas(canvas) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   return { ctx, cssWidth: rect.width, cssHeight: rect.height };
+}
+
+function aggregateOutcomeByYear(data, year) {
+  const counts = {
+    Success: 0,
+    Failure: 0,
+    Partial: 0,
+    Other: 0,
+  };
+
+  data.forEach((d) => {
+    const parsed = new Date(d.Date);
+    if (Number.isNaN(parsed.getTime())) return;
+    if (parsed.getFullYear() !== year) return;
+
+    const status = (d.MissionStatus || "").toLowerCase();
+
+    if (status.includes("success")) counts.Success++;
+    else if (status.includes("fail")) counts.Failure++;
+    else if (status.includes("partial")) counts.Partial++;
+    else counts.Other++;
+  });
+
+  return counts;
+}
+
+function drawOutcomeChart(outcomes) {
+  const canvas = document.getElementById("outcomeChart");
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  const { width, height } = canvas;
+
+  ctx.clearRect(0, 0, width, height);
+
+  const total = Object.values(outcomes).reduce((a, b) => a + b, 0);
+  if (total === 0) return;
+
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const radius = Math.min(width, height) / 2 - 10;
+  const innerRadius = radius * 0.6;
+
+  const colors = {
+    Success: "#4caf50",
+    Failure: "#f44336",
+    Partial: "#ff9800",
+    Other: "#9e9e9e",
+  };
+
+  let startAngle = -Math.PI / 2;
+
+  Object.entries(outcomes).forEach(([key, value]) => {
+    if (value === 0) return;
+
+    const sliceAngle = (value / total) * Math.PI * 2;
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
+    ctx.arc(
+      centerX,
+      centerY,
+      innerRadius,
+      startAngle + sliceAngle,
+      startAngle,
+      true
+    );
+    ctx.closePath();
+
+    ctx.fillStyle = colors[key];
+    ctx.fill();
+
+    startAngle += sliceAngle;
+  });
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "12px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("Outcomes", centerX, centerY - 8);
+  ctx.fillText(total + " launches", centerX, centerY + 8);
 }
 
 function initChartCanvas() {
