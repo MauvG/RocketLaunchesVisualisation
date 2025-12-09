@@ -37,3 +37,9 @@ body {
   margin-top: 6px;
   font-size: 14px;
 }
+
+#launchChart {
+  display: block;
+  margin: 10px auto;
+  background: #0b0b0b;
+}
