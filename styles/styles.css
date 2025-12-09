@@ -8,14 +8,13 @@ body {
 #infoPanel {
   position: absolute;
   top: 20px;
-  left: 20px;
-  padding: 12px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.85);
   color: white;
-  background: rgba(0, 0, 0, 0.6);
-  display: none;
-  border-radius: 6px;
+  padding: 12px;
   max-width: 280px;
-  backdrop-filter: blur(6px);
+  font-family: sans-serif;
+  display: none;
 }
 
 #time-ui {

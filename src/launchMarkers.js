@@ -4,6 +4,7 @@ import { latLonToVector3 } from "./utils/geo.js";
 export function createLaunchMarkers(data, radius = 1.5) {
   const positions = [];
   const colors = [];
+  const launches = [];
 
   const successColor = new THREE.Color(0x00ff00);
   const failureColor = new THREE.Color(0xff0000);
@@ -25,6 +26,7 @@ export function createLaunchMarkers(data, radius = 1.5) {
     const color = d.MissionStatus === "Success" ? successColor : failureColor;
 
     colors.push(color.r, color.g, color.b);
+    launches.push(d);
   });
 
   const geometry = new THREE.BufferGeometry();
@@ -43,5 +45,8 @@ export function createLaunchMarkers(data, radius = 1.5) {
     depthWrite: false,
   });
 
-  return new THREE.Points(geometry, material);
+  const points = new THREE.Points(geometry, material);
+  points.userData.launches = launches;
+
+  return points;
 }
