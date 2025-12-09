@@ -3,8 +3,8 @@ import time
 from geopy.geocoders import Nominatim
 from tqdm import tqdm
 
-INPUT_CSV = "assets/data/space_missions.csv"
-OUTPUT_CSV = "assets/data/space_missions_geocoded.csv"
+INPUT_CSV = "data/space_missions.csv"
+OUTPUT_CSV = "data/space_missions_geocoded.csv"
 LOCATION_COLUMN = "Location"
 USER_AGENT = "rocket-launch-visualisation"
 
