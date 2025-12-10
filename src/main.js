@@ -37,7 +37,7 @@ export default async function main() {
     updateMarkers(year);
 
     const outcomes = aggregateOutcomeByYear(launchData, year);
-    drawOutcomeChart(outcomes, year);
+    drawOutcomeChart(outcomes);
 
     const byCountry = aggregateLaunchesByCountry(launchData, year);
     drawCountryChart(byCountry);
@@ -64,8 +64,10 @@ function initThree() {
   scene = new THREE.Scene();
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  document.body.appendChild(renderer.domElement);
+
+  const container = document.getElementById("scene-container");
+  container.appendChild(renderer.domElement);
+  renderer.setSize(container.clientWidth, container.clientHeight);
 
   camera = new THREE.PerspectiveCamera(
     45,
@@ -184,35 +186,6 @@ function showLaunchInfo(launch) {
   panel.style.display = "block";
 }
 
-function aggregateLaunchesByYear(data) {
-  const counts = {};
-
-  data.forEach((d) => {
-    const year = new Date(d.Date).getFullYear();
-    if (!isNaN(year)) {
-      counts[year] = (counts[year] || 0) + 1;
-    }
-  });
-
-  return Object.entries(counts)
-    .map(([year, count]) => ({ year: +year, count }))
-    .sort((a, b) => a.year - b.year);
-}
-
-function setupChartCanvas(canvas) {
-  const dpr = window.devicePixelRatio || 1;
-  const rect = canvas.getBoundingClientRect();
-
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
-
-  const ctx = canvas.getContext("2d");
-
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-  return { ctx, cssWidth: rect.width, cssHeight: rect.height };
-}
-
 function aggregateOutcomeByYear(data, year) {
   const counts = {
     Success: 0,
@@ -237,7 +210,7 @@ function aggregateOutcomeByYear(data, year) {
   return counts;
 }
 
-function drawOutcomeChart(outcomes, year) {
+function drawOutcomeChart(outcomes) {
   const canvas = document.getElementById("outcomeChart");
   if (!canvas) return;
 
@@ -290,9 +263,8 @@ function drawOutcomeChart(outcomes, year) {
   ctx.font = "12px sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText("Outcomes", centerX, centerY - 24);
-  ctx.fillText("Launches: " + total, centerX, centerY);
-  ctx.fillText("Year: " + year, centerX, centerY + 24);
+  ctx.fillText("Outcomes", centerX, centerY - 16);
+  ctx.fillText("Launches: " + total, centerX, centerY + 16);
 }
 
 function aggregateLaunchesByCountry(data, year, limit = 10) {
@@ -620,29 +592,30 @@ function drawSuccessFailureChart(data) {
   ctx.setLineDash([]);
 
   ctx.font = "12px sans-serif";
-  ctx.fillText("Launch successes vs failures (all years)", width / 2, 16);
+  ctx.fillText("Total launches for all years", width / 2, 0);
 
   ctx.textAlign = "left";
 
   ctx.fillStyle = "#4caf50";
-  ctx.fillRect(width - 140, 24, 10, 10);
+  ctx.fillRect(width - 100, 0, 10, 10);
   ctx.fillStyle = "#ffffff";
-  ctx.fillText("Success", width - 120, 34);
+  ctx.fillText("Success", width - 80, 0);
 
   ctx.fillStyle = "#f44336";
-  ctx.fillRect(width - 140, 42, 10, 10);
+  ctx.fillRect(width - 100, 20, 10, 10);
   ctx.fillStyle = "#ffffff";
-  ctx.fillText("Failure", width - 120, 52);
+  ctx.fillText("Failure", width - 80, 20);
 
   ctx.strokeStyle = "#4dacff";
   ctx.setLineDash([4, 4]);
   ctx.beginPath();
-  ctx.moveTo(width - 140, 66);
-  ctx.lineTo(width - 130, 66);
+  ctx.moveTo(width - 100, 45);
+  ctx.lineTo(width - 90, 45);
+
   ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillStyle = "#ffffff";
-  ctx.fillText("Total launches", width - 120, 70);
+  ctx.fillText("Total launches", width - 80, 40);
 }
 
 function animate() {

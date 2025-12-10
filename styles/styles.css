@@ -1,32 +1,31 @@
 body {
   margin: 0;
-  overflow: hidden;
   background-color: #000;
   font-family: Arial, sans-serif;
+  color: white;
 }
 
-#infoPanel {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: rgba(0, 0, 0, 0.85);
-  color: white;
-  padding: 12px;
-  max-width: 280px;
-  font-family: sans-serif;
-  display: none;
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+#scene-container {
+  flex: 1;
+  position: relative;
+}
+
+#ui-panel {
+  padding: 16px;
+  background: #050505;
+  border-top: 1px solid #222;
 }
 
 #time-ui {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
   width: 60%;
+  margin: 0 auto 16px auto;
   text-align: center;
-  z-index: 10;
-  color: white;
-  font-family: sans-serif;
 }
 
 #yearSlider {
@@ -38,8 +37,29 @@ body {
   font-size: 14px;
 }
 
-#launchChart {
-  display: block;
-  margin: 10px auto;
+#charts {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+#charts canvas {
   background: #0b0b0b;
+  border-radius: 6px;
+  padding: 6px;
+}
+
+#infoPanel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  padding: 12px;
+  max-width: 280px;
+  display: none;
+  z-index: 10;
 }
