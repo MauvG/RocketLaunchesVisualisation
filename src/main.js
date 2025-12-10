@@ -43,7 +43,10 @@ export default async function main() {
     drawLaunchChart(yearlyData, year, onYearClick);
 
     const outcomes = aggregateOutcomeByYear(launchData, year);
-    drawOutcomeChart(outcomes);
+    drawOutcomeChart(outcomes, year);
+
+    const byCountry = aggregateLaunchesByCountry(launchData, year);
+    drawCountryChart(byCountry);
   }
 
   const initialYear = (slider && parseInt(slider.value, 10)) || 2000;
@@ -240,7 +243,7 @@ function aggregateOutcomeByYear(data, year) {
   return counts;
 }
 
-function drawOutcomeChart(outcomes) {
+function drawOutcomeChart(outcomes, year) {
   const canvas = document.getElementById("outcomeChart");
   if (!canvas) return;
 
@@ -293,8 +296,82 @@ function drawOutcomeChart(outcomes) {
   ctx.font = "12px sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText("Outcomes", centerX, centerY - 8);
-  ctx.fillText(total + " launches", centerX, centerY + 8);
+  ctx.fillText("Outcomes", centerX, centerY - 24);
+  ctx.fillText("Launches: " + total, centerX, centerY);
+  ctx.fillText("Year: " + year, centerX, centerY + 24);
+}
+
+function aggregateLaunchesByCountry(data, year, limit = 10) {
+  const counts = {};
+
+  data.forEach((d) => {
+    const parsed = new Date(d.Date);
+    if (Number.isNaN(parsed.getTime())) return;
+    if (parsed.getFullYear() !== year) return;
+
+    const location = d.Location || "";
+    const parts = location.split(",");
+    const country = parts[parts.length - 1]?.trim() || "Unknown";
+
+    counts[country] = (counts[country] || 0) + 1;
+  });
+
+  return Object.entries(counts)
+    .map(([country, count]) => ({ country, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+}
+
+function drawCountryChart(data) {
+  const canvas = document.getElementById("countryChart");
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  const { width, height } = canvas;
+
+  ctx.clearRect(0, 0, width, height);
+
+  if (!data.length) return;
+
+  const padding = 40;
+  const chartWidth = width - padding * 2;
+  const chartHeight = height - padding * 2;
+
+  const maxValue = Math.max(...data.map((d) => d.count));
+  const barWidth = chartWidth / data.length;
+
+  ctx.strokeStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.moveTo(padding, padding);
+  ctx.lineTo(padding, padding + chartHeight);
+  ctx.lineTo(padding + chartWidth, padding + chartHeight);
+  ctx.stroke();
+
+  data.forEach((d, i) => {
+    const x = padding + i * barWidth + barWidth * 0.1;
+    const barH = (d.count / maxValue) * chartHeight;
+    const y = padding + chartHeight - barH;
+
+    ctx.fillStyle = "#4dacff";
+    ctx.fillRect(x, y, barWidth * 0.8, barH);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "11px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(d.count, x + barWidth * 0.4, y - 6);
+
+    ctx.save();
+    ctx.translate(x + barWidth * 0.4, padding + chartHeight + 6);
+    ctx.rotate(-Math.PI / 4);
+    ctx.textAlign = "right";
+    ctx.fillText(d.country, 0, 0);
+    ctx.restore();
+  });
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "12px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("Top launch countries", width / 2, 16);
 }
 
 function initChartCanvas() {
