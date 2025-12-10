@@ -36,9 +36,6 @@ export default async function main() {
 
     updateMarkers(year);
 
-    const outcomes = aggregateOutcomeByYear(launchData, year);
-    drawOutcomeChart(outcomes);
-
     const byCountry = aggregateLaunchesByCountry(launchData, year);
     drawCountryChart(byCountry);
   }
@@ -186,87 +183,6 @@ function showLaunchInfo(launch) {
   panel.style.display = "block";
 }
 
-function aggregateOutcomeByYear(data, year) {
-  const counts = {
-    Success: 0,
-    Failure: 0,
-    Partial: 0,
-    Other: 0,
-  };
-
-  data.forEach((d) => {
-    const parsed = new Date(d.Date);
-    if (Number.isNaN(parsed.getTime())) return;
-    if (parsed.getFullYear() !== year) return;
-
-    const status = (d.MissionStatus || "").toLowerCase();
-
-    if (status.includes("success")) counts.Success++;
-    else if (status.includes("fail")) counts.Failure++;
-    else if (status.includes("partial")) counts.Partial++;
-    else counts.Other++;
-  });
-
-  return counts;
-}
-
-function drawOutcomeChart(outcomes) {
-  const canvas = document.getElementById("outcomeChart");
-  if (!canvas) return;
-
-  const ctx = canvas.getContext("2d");
-  const { width, height } = canvas;
-
-  ctx.clearRect(0, 0, width, height);
-
-  const total = Object.values(outcomes).reduce((a, b) => a + b, 0);
-  if (total === 0) return;
-
-  const centerX = width / 2;
-  const centerY = height / 2;
-  const radius = Math.min(width, height) / 2 - 10;
-  const innerRadius = radius * 0.6;
-
-  const colors = {
-    Success: "#4caf50",
-    Failure: "#f44336",
-    Partial: "#ff9800",
-    Other: "#9e9e9e",
-  };
-
-  let startAngle = -Math.PI / 2;
-
-  Object.entries(outcomes).forEach(([key, value]) => {
-    if (value === 0) return;
-
-    const sliceAngle = (value / total) * Math.PI * 2;
-
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
-    ctx.arc(
-      centerX,
-      centerY,
-      innerRadius,
-      startAngle + sliceAngle,
-      startAngle,
-      true
-    );
-    ctx.closePath();
-
-    ctx.fillStyle = colors[key];
-    ctx.fill();
-
-    startAngle += sliceAngle;
-  });
-
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "12px sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("Outcomes", centerX, centerY - 16);
-  ctx.fillText("Launches: " + total, centerX, centerY + 16);
-}
-
 function aggregateLaunchesByCountry(data, year, limit = 10) {
   const counts = {};
 
@@ -290,54 +206,74 @@ function aggregateLaunchesByCountry(data, year, limit = 10) {
 
 function drawCountryChart(data) {
   const canvas = document.getElementById("countryChart");
-  if (!canvas) return;
+  if (!canvas || !data.length) return;
 
   const ctx = canvas.getContext("2d");
   const { width, height } = canvas;
 
   ctx.clearRect(0, 0, width, height);
 
-  if (!data.length) return;
-
-  const padding = 40;
-  const chartWidth = width - padding * 2;
-  const chartHeight = height - padding * 2;
+  const padding = { top: 30, right: 20, bottom: 50, left: 50 };
+  const chartW = width - padding.left - padding.right;
+  const chartH = height - padding.top - padding.bottom;
 
   const maxValue = Math.max(...data.map((d) => d.count));
-  const barWidth = chartWidth / data.length;
+  const barGroupWidth = chartW / data.length;
+  const barWidth = barGroupWidth * 0.6;
+
+  const xScale = (i) => padding.left + i * barGroupWidth + barGroupWidth / 2;
+
+  const yScale = (v) => padding.top + chartH - (v / maxValue) * chartH;
 
   ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(padding, padding);
-  ctx.lineTo(padding, padding + chartHeight);
-  ctx.lineTo(padding + chartWidth, padding + chartHeight);
+  ctx.moveTo(padding.left, padding.top);
+  ctx.lineTo(padding.left, padding.top + chartH);
+  ctx.lineTo(padding.left + chartW, padding.top + chartH);
   ctx.stroke();
 
+  ctx.font = "11px sans-serif";
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+
+  const ticks = 4;
+  for (let i = 0; i <= ticks; i++) {
+    const value = Math.round((maxValue / ticks) * i);
+    const y = yScale(value);
+
+    ctx.fillText(value, padding.left - 6, y);
+
+    ctx.strokeStyle = "#222";
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(padding.left + chartW, y);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = "#4dacff";
   data.forEach((d, i) => {
-    const x = padding + i * barWidth + barWidth * 0.1;
-    const barH = (d.count / maxValue) * chartHeight;
-    const y = padding + chartHeight - barH;
+    const x = xScale(i) - barWidth / 2;
+    const y = yScale(d.count);
+    const barH = padding.top + chartH - y;
 
-    ctx.fillStyle = "#4dacff";
-    ctx.fillRect(x, y, barWidth * 0.8, barH);
-
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "11px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(d.count, x + barWidth * 0.4, y - 6);
-
-    ctx.save();
-    ctx.translate(x + barWidth * 0.4, padding + chartHeight + 6);
-    ctx.rotate(-Math.PI / 4);
-    ctx.textAlign = "right";
-    ctx.fillText(d.country, 0, 0);
-    ctx.restore();
+    ctx.fillRect(x, y, barWidth, barH);
   });
 
   ctx.fillStyle = "#ffffff";
+  ctx.font = "11px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+
+  data.forEach((d, i) => {
+    ctx.fillText(d.country, xScale(i), padding.top + chartH + 6);
+  });
+
   ctx.font = "12px sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("Top launch countries", width / 2, 16);
+  ctx.textBaseline = "top";
+  ctx.fillText("Top launch countries", width / 2, 6);
 }
 
 function initChartCanvas() {
@@ -632,9 +568,15 @@ function animate() {
 }
 
 function onResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
+  const container = document.getElementById("scene-container");
+  if (!container) return;
+
+  const w = container.clientWidth;
+  const h = container.clientHeight;
+
+  camera.aspect = w / h;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(w, h);
 }
 
 main().catch((err) => {
