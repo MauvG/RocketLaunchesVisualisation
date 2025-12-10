@@ -61,17 +61,17 @@ function initThree() {
   scene = new THREE.Scene();
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
   const container = document.getElementById("scene-container");
+
   container.appendChild(renderer.domElement);
   renderer.setSize(container.clientWidth, container.clientHeight);
 
-  camera = new THREE.PerspectiveCamera(
-    45,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
-  );
+  const w = container.clientWidth;
+  const h = container.clientHeight;
+
+  camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
   camera.position.set(0, 0, 5);
 
   const controls = new OrbitControls(camera, renderer.domElement);
