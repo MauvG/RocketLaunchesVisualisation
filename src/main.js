@@ -38,6 +38,9 @@ export default async function main() {
 
     const byCountry = aggregateLaunchesByCountry(launchData, year);
     drawCountryChart(byCountry);
+
+    const byCompany = aggregateLaunchesByCompany(launchData, year);
+    drawCompanyChart(byCompany);
   }
 
   const initialYear = (slider && parseInt(slider.value, 10)) || 2000;
@@ -195,12 +198,24 @@ function aggregateLaunchesByCountry(data, year, limit = 10) {
     const parts = location.split(",");
     const country = parts[parts.length - 1]?.trim() || "Unknown";
 
-    counts[country] = (counts[country] || 0) + 1;
+    if (!counts[country]) {
+      counts[country] = { country, success: 0, failure: 0 };
+    }
+
+    const status = (d.MissionStatus || "").toLowerCase();
+    if (status.includes("success")) {
+      counts[country].success += 1;
+    } else {
+      counts[country].failure += 1;
+    }
   });
 
-  return Object.entries(counts)
-    .map(([country, count]) => ({ country, count }))
-    .sort((a, b) => b.count - a.count)
+  return Object.values(counts)
+    .map((d) => ({
+      ...d,
+      total: d.success + d.failure,
+    }))
+    .sort((a, b) => b.total - a.total)
     .slice(0, limit);
 }
 
@@ -217,7 +232,7 @@ function drawCountryChart(data) {
   const chartW = width - padding.left - padding.right;
   const chartH = height - padding.top - padding.bottom;
 
-  const maxValue = Math.max(...data.map((d) => d.count));
+  const maxValue = Math.max(...data.map((d) => d.total));
   const barGroupWidth = chartW / data.length;
   const barWidth = barGroupWidth * 0.6;
 
@@ -252,13 +267,20 @@ function drawCountryChart(data) {
     ctx.stroke();
   }
 
-  ctx.fillStyle = "#4dacff";
   data.forEach((d, i) => {
     const x = xScale(i) - barWidth / 2;
-    const y = yScale(d.count);
-    const barH = padding.top + chartH - y;
 
-    ctx.fillRect(x, y, barWidth, barH);
+    const ySuccess = yScale(d.success);
+    const hSuccess = padding.top + chartH - ySuccess;
+
+    ctx.fillStyle = "#4caf50";
+    ctx.fillRect(x, ySuccess, barWidth, hSuccess);
+
+    const yFailure = yScale(d.success + d.failure);
+    const hFailure = ySuccess - yFailure;
+
+    ctx.fillStyle = "#f44336";
+    ctx.fillRect(x + 1, yFailure, barWidth - 2, hFailure);
   });
 
   ctx.fillStyle = "#ffffff";
@@ -273,141 +295,141 @@ function drawCountryChart(data) {
   ctx.font = "12px sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
-  ctx.fillText("Top launch countries", width / 2, 6);
+  ctx.fillText("Countries with most launches", width / 2, 6);
+
+  ctx.textAlign = "left";
+  ctx.font = "11px sans-serif";
+
+  ctx.fillStyle = "#4caf50";
+  ctx.fillRect(width - 120, 16, 10, 10);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("Success", width - 104, 16);
+
+  ctx.fillStyle = "#f44336";
+  ctx.fillRect(width - 120, 32, 10, 10);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("Failure", width - 104, 32);
 }
 
-function initChartCanvas() {
-  const canvas = document.getElementById("launchChart");
-  if (!canvas) return;
-
-  const dpr = window.devicePixelRatio || 1;
-  const rect = canvas.getBoundingClientRect();
-
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
-
-  chartCtx = canvas.getContext("2d");
-  chartCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-  chartWidth = rect.width;
-  chartHeight = rect.height;
-}
-
-function drawLaunchChart(data, selectedYear, onYearClick) {
-  if (!Array.isArray(data) || data.length === 0) return;
-
-  const YEAR_MIN = yearlyData[0].year;
-  const YEAR_MAX = yearlyData[yearlyData.length - 1].year;
-  const MAX_COUNT = Math.max(...yearlyData.map((d) => d.count));
-
-  const canvas = document.getElementById("launchChart");
-  if (!canvas) return;
-
-  const ctx = chartCtx;
-  const cssWidth = chartWidth;
-  const cssHeight = chartHeight;
-
-  ctx.clearRect(0, 0, cssWidth, cssHeight);
-
-  const padding = 40;
-  const width = cssWidth - padding * 2;
-  const height = cssHeight - padding * 2;
-
-  const maxCount = MAX_COUNT || 1;
-
-  const xScale = (year) =>
-    padding + ((year - YEAR_MIN) / (YEAR_MAX - YEAR_MIN)) * width;
-
-  const yScale = (count) => padding + height - (count / maxCount) * height;
-
-  ctx.clearRect(0, 0, cssWidth, cssHeight);
-
-  ctx.strokeStyle = "#ffffffff";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(padding, padding);
-  ctx.lineTo(padding, padding + height);
-  ctx.lineTo(padding + width, padding + height);
-  ctx.stroke();
-
-  ctx.fillStyle = "#ffffffff";
-  ctx.font = "12px sans-serif";
-  ctx.textBaseline = "middle";
-  ctx.textAlign = "right";
-
-  const yTicks = 4;
-  for (let i = 0; i <= yTicks; i++) {
-    const value = Math.round((maxCount / yTicks) * i);
-    const y = yScale(value);
-
-    ctx.fillText(value, padding - 8, y);
-
-    ctx.strokeStyle = "#222";
-    ctx.beginPath();
-    ctx.moveTo(padding, y);
-    ctx.lineTo(padding + width, y);
-    ctx.stroke();
-  }
-
-  ctx.strokeStyle = "#4dacff";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  data.forEach((d, i) => {
-    const x = xScale(d.year);
-    const y = yScale(d.count);
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  });
-  ctx.stroke();
+function aggregateLaunchesByCompany(data, year, limit = 10) {
+  const counts = {};
 
   data.forEach((d) => {
-    const x = xScale(d.year);
-    const y = yScale(d.count);
+    const parsed = new Date(d.Date);
+    if (isNaN(parsed.getTime())) return;
+    if (parsed.getFullYear() !== year) return;
 
-    ctx.fillStyle = d.year === selectedYear ? "#ff9800" : "#ffffff";
-    ctx.beginPath();
-    ctx.arc(x, y, 3, 0, Math.PI * 2);
-    ctx.fill();
-  });
+    const company = d.Company?.trim() || "Unknown";
+    const status = (d.MissionStatus || "").toLowerCase();
 
-  ctx.textAlign = "center";
-  ctx.textBaseline = "top";
-  data.forEach((d) => {
-    if (d.year % 10 === 0) {
-      const x = xScale(d.year);
-      ctx.fillStyle = "#ffffffff";
-      ctx.fillText(d.year, x, padding + height + 6);
+    if (!counts[company]) {
+      counts[company] = { company, success: 0, failure: 0 };
+    }
+
+    if (status.includes("success")) {
+      counts[company].success += 1;
+    } else {
+      counts[company].failure += 1;
     }
   });
 
-  ctx.save();
-  ctx.translate(12, padding + height / 2);
-  ctx.rotate(-Math.PI / 2);
+  return Object.values(counts)
+    .map((d) => ({
+      ...d,
+      total: d.success + d.failure,
+    }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, limit);
+}
+
+function drawCompanyChart(data) {
+  const canvas = document.getElementById("companyChart");
+  if (!canvas || !data.length) return;
+
+  const ctx = canvas.getContext("2d");
+  const { width, height } = canvas;
+
+  ctx.clearRect(0, 0, width, height);
+
+  const padding = { top: 30, right: 20, bottom: 50, left: 50 };
+  const chartW = width - padding.left - padding.right;
+  const chartH = height - padding.top - padding.bottom;
+
+  const maxValue = Math.max(...data.map((d) => d.total));
+  const groupW = chartW / data.length;
+  const barW = groupW * 0.6;
+
+  const xCenter = (i) => padding.left + i * groupW + groupW / 2;
+
+  const yScale = (v) => padding.top + chartH - (v / maxValue) * chartH;
+
+  ctx.strokeStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.moveTo(padding.left, padding.top);
+  ctx.lineTo(padding.left, padding.top + chartH);
+  ctx.lineTo(padding.left + chartW, padding.top + chartH);
+  ctx.stroke();
+
+  ctx.font = "11px sans-serif";
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+
+  for (let i = 0; i <= 4; i++) {
+    const v = Math.round((maxValue / 4) * i);
+    const y = yScale(v);
+
+    ctx.fillText(v, padding.left - 6, y);
+
+    ctx.strokeStyle = "#222";
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(padding.left + chartW, y);
+    ctx.stroke();
+  }
+
+  data.forEach((d, i) => {
+    const x = xCenter(i) - barW / 2;
+
+    const ySuccess = yScale(d.success);
+    const yTotal = yScale(d.total);
+
+    const hSuccess = padding.top + chartH - ySuccess;
+    const hFailure = ySuccess - yTotal;
+
+    ctx.fillStyle = "#4caf50";
+    ctx.fillRect(x, ySuccess, barW, hSuccess);
+
+    ctx.fillStyle = "#f44336";
+    ctx.fillRect(x + 1, yTotal, barW - 2, hFailure);
+  });
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "11px sans-serif";
   ctx.textAlign = "center";
-  ctx.fillStyle = "#ffffffff";
-  ctx.fillText("Launches per year", 0, -15);
-  ctx.restore();
+  ctx.textBaseline = "top";
 
+  data.forEach((d, i) => {
+    ctx.fillText(d.company, xCenter(i), padding.top + chartH + 6);
+  });
+
+  ctx.font = "12px sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("Year", padding + width / 2, cssHeight - 15);
+  ctx.textBaseline = "top";
+  ctx.fillText("Comapnies with most launches", width / 2, 6);
 
-  canvas.onclick = (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
+  ctx.textAlign = "left";
+  ctx.font = "11px sans-serif";
 
-    let closestYear = data[0].year;
-    let minDist = Infinity;
+  ctx.fillStyle = "#4caf50";
+  ctx.fillRect(width - 120, 16, 10, 10);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("Success", width - 104, 16);
 
-    data.forEach((d) => {
-      const dist = Math.abs(xScale(d.year) - mouseX);
-      if (dist < minDist) {
-        minDist = dist;
-        closestYear = d.year;
-      }
-    });
-
-    onYearClick(closestYear);
-  };
+  ctx.fillStyle = "#f44336";
+  ctx.fillRect(width - 120, 32, 10, 10);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("Failure", width - 104, 32);
 }
 
 function aggregateOutcomeTrends(data) {
