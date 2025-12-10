@@ -58,6 +58,35 @@ export default async function main() {
   window.addEventListener("resize", onResize);
 
   animate();
+
+  const { byCountry, byCompany } = aggregateAllTimeStats(launchData);
+
+  const c = getTopMetrics(byCountry);
+  const o = getTopMetrics(byCompany);
+
+  document.getElementById(
+    "topCountry"
+  ).textContent = `${c.mostLaunches[0]} (${c.mostLaunches[1].total})`;
+
+  document.getElementById(
+    "topCompany"
+  ).textContent = `${o.mostLaunches[0]} (${o.mostLaunches[1].total})`;
+
+  document.getElementById(
+    "topFailureCountry"
+  ).textContent = `${c.mostFailures[0]} (${c.mostFailures[1].failure})`;
+
+  document.getElementById(
+    "topFailureCompany"
+  ).textContent = `${o.mostFailures[0]} (${o.mostFailures[1].failure})`;
+
+  document.getElementById("bestCountry").textContent = `${
+    c.bestSuccessRate.name
+  } (${(c.bestSuccessRate.rate * 100).toFixed(1)}%)`;
+
+  document.getElementById("bestCompany").textContent = `${
+    o.bestSuccessRate.name
+  } (${(o.bestSuccessRate.rate * 100).toFixed(1)}%)`;
 }
 
 function initThree() {
@@ -186,7 +215,7 @@ function showLaunchInfo(launch) {
   panel.style.display = "block";
 }
 
-function aggregateLaunchesByCountry(data, year, limit = 10) {
+function aggregateLaunchesByCountry(data, year, limit = 6) {
   const counts = {};
 
   data.forEach((d) => {
@@ -311,7 +340,7 @@ function drawCountryChart(data) {
   ctx.fillText("Failure", width - 104, 32);
 }
 
-function aggregateLaunchesByCompany(data, year, limit = 10) {
+function aggregateLaunchesByCompany(data, year, limit = 6) {
   const counts = {};
 
   data.forEach((d) => {
@@ -574,6 +603,53 @@ function drawSuccessFailureChart(data) {
   ctx.setLineDash([]);
   ctx.fillStyle = "#ffffff";
   ctx.fillText("Total launches", width - 80, 40);
+}
+
+function aggregateAllTimeStats(data) {
+  const byCountry = {};
+  const byCompany = {};
+
+  data.forEach((d) => {
+    const country = d.Location?.split(",").pop()?.trim() || "Unknown";
+    const company = d.Company || "Unknown";
+    const success = (d.MissionStatus || "").toLowerCase().includes("success");
+
+    for (const key of [
+      [byCountry, country],
+      [byCompany, company],
+    ]) {
+      const map = key[0];
+      const name = key[1];
+
+      if (!map[name]) {
+        map[name] = { success: 0, failure: 0, total: 0 };
+      }
+
+      success ? map[name].success++ : map[name].failure++;
+      map[name].total++;
+    }
+  });
+
+  return { byCountry, byCompany };
+}
+
+function getTopMetrics(map, minLaunches = 30) {
+  const entries = Object.entries(map);
+
+  return {
+    mostLaunches: entries.reduce((a, b) => (b[1].total > a[1].total ? b : a)),
+    mostFailures: entries.reduce((a, b) =>
+      b[1].failure > a[1].failure ? b : a
+    ),
+    bestSuccessRate: entries
+      .filter(([, v]) => v.total >= minLaunches)
+      .map(([k, v]) => ({
+        name: k,
+        rate: v.success / v.total,
+        total: v.total,
+      }))
+      .sort((a, b) => b.rate - a.rate)[0],
+  };
 }
 
 function animate() {
