@@ -23,6 +23,9 @@ export default async function main() {
   launchData = await loadCSV("/data/space_missions_geocoded.csv");
   yearlyData = aggregateLaunchesByYear(launchData);
 
+  const outcomeTrends = aggregateOutcomeTrends(launchData);
+  drawSuccessFailureChart(outcomeTrends);
+
   launchMarkersGroup = new THREE.Group();
   scene.add(launchMarkersGroup);
 
@@ -506,6 +509,121 @@ function drawLaunchChart(data, selectedYear, onYearClick) {
 
     onYearClick(closestYear);
   };
+}
+
+function aggregateOutcomeTrends(data) {
+  const byYear = {};
+
+  data.forEach((d) => {
+    const year = new Date(d.Date).getFullYear();
+    if (isNaN(year)) return;
+
+    if (!byYear[year]) {
+      byYear[year] = { year, success: 0, failure: 0 };
+    }
+
+    const status = (d.MissionStatus || "").toLowerCase();
+
+    if (status.includes("success")) {
+      byYear[year].success += 1;
+    } else {
+      byYear[year].failure += 1;
+    }
+  });
+
+  return Object.values(byYear).sort((a, b) => a.year - b.year);
+}
+
+function drawSuccessFailureChart(data) {
+  const canvas = document.getElementById("successFailureChart");
+  if (!canvas || !data.length) return;
+
+  const ctx = canvas.getContext("2d");
+  const { width, height } = canvas;
+
+  ctx.clearRect(0, 0, width, height);
+
+  const padding = 40;
+  const chartW = width - padding * 2;
+  const chartH = height - padding * 2;
+
+  const years = data.map((d) => d.year);
+  const maxValue = Math.max(...data.map((d) => Math.max(d.success, d.failure)));
+
+  const xScale = (year) =>
+    padding +
+    ((year - years[0]) / (years[years.length - 1] - years[0])) * chartW;
+
+  const yScale = (val) => padding + chartH - (val / maxValue) * chartH;
+
+  ctx.strokeStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.moveTo(padding, padding);
+  ctx.lineTo(padding, padding + chartH);
+  ctx.lineTo(padding + chartW, padding + chartH);
+  ctx.stroke();
+
+  ctx.font = "11px sans-serif";
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+
+  for (let i = 0; i <= 4; i++) {
+    const v = Math.round((maxValue / 4) * i);
+    const y = yScale(v);
+    ctx.fillText(v, padding - 6, y);
+
+    ctx.strokeStyle = "#222";
+    ctx.beginPath();
+    ctx.moveTo(padding, y);
+    ctx.lineTo(padding + chartW, y);
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = "#4caf50";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  data.forEach((d, i) => {
+    const x = xScale(d.year);
+    const y = yScale(d.success);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  ctx.strokeStyle = "#f44336";
+  ctx.beginPath();
+  data.forEach((d, i) => {
+    const x = xScale(d.year);
+    const y = yScale(d.failure);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+
+  years.forEach((y) => {
+    if (y % 10 === 0) {
+      ctx.fillText(y, xScale(y), padding + chartH + 6);
+    }
+  });
+
+  ctx.font = "12px sans-serif";
+  ctx.fillText("Launch successes vs failures (all years)", width / 2, 16);
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#4caf50";
+  ctx.fillRect(width - 120, 24, 10, 10);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("Success", width - 100, 34);
+
+  ctx.fillStyle = "#f44336";
+  ctx.fillRect(width - 120, 42, 10, 10);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("Failure", width - 100, 52);
 }
 
 function animate() {
