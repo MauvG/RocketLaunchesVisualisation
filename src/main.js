@@ -8,10 +8,6 @@ let scene, camera, renderer, globe;
 let raycaster, mouse;
 let launchMarkersGroup;
 let launchData = [];
-let yearlyData = [];
-let chartCtx = null;
-let chartWidth = 0;
-let chartHeight = 0;
 
 const PICK_PIXEL_RADIUS = 8;
 
@@ -21,16 +17,12 @@ export default async function main() {
   initRaycaster();
 
   launchData = await loadCSV("/data/space_missions_geocoded.csv");
-  yearlyData = aggregateLaunchesByYear(launchData);
 
   const outcomeTrends = aggregateOutcomeTrends(launchData);
   drawSuccessFailureChart(outcomeTrends);
 
   launchMarkersGroup = new THREE.Group();
   scene.add(launchMarkersGroup);
-
-  initChartCanvas();
-  drawLaunchChart(yearlyData, 2000, onYearClick);
 
   const slider = document.getElementById("yearSlider");
   const label = document.getElementById("yearLabel");
@@ -43,7 +35,6 @@ export default async function main() {
     if (label) label.textContent = `Year: ${year}`;
 
     updateMarkers(year);
-    drawLaunchChart(yearlyData, year, onYearClick);
 
     const outcomes = aggregateOutcomeByYear(launchData, year);
     drawOutcomeChart(outcomes, year);
@@ -519,7 +510,7 @@ function aggregateOutcomeTrends(data) {
     if (isNaN(year)) return;
 
     if (!byYear[year]) {
-      byYear[year] = { year, success: 0, failure: 0 };
+      byYear[year] = { year, success: 0, failure: 0, total: 0 };
     }
 
     const status = (d.MissionStatus || "").toLowerCase();
@@ -529,6 +520,8 @@ function aggregateOutcomeTrends(data) {
     } else {
       byYear[year].failure += 1;
     }
+
+    byYear[year].total += 1;
   });
 
   return Object.values(byYear).sort((a, b) => a.year - b.year);
@@ -548,7 +541,9 @@ function drawSuccessFailureChart(data) {
   const chartH = height - padding * 2;
 
   const years = data.map((d) => d.year);
-  const maxValue = Math.max(...data.map((d) => Math.max(d.success, d.failure)));
+  const maxValue = Math.max(
+    ...data.map((d) => Math.max(d.success, d.failure, d.total))
+  );
 
   const xScale = (year) =>
     padding +
@@ -611,19 +606,43 @@ function drawSuccessFailureChart(data) {
     }
   });
 
+  ctx.strokeStyle = "#4dacff";
+  ctx.setLineDash([4, 4]);
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  data.forEach((d, i) => {
+    const x = xScale(d.year);
+    const y = yScale(d.total);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+  ctx.setLineDash([]);
+
   ctx.font = "12px sans-serif";
   ctx.fillText("Launch successes vs failures (all years)", width / 2, 16);
 
   ctx.textAlign = "left";
+
   ctx.fillStyle = "#4caf50";
-  ctx.fillRect(width - 120, 24, 10, 10);
+  ctx.fillRect(width - 140, 24, 10, 10);
   ctx.fillStyle = "#ffffff";
-  ctx.fillText("Success", width - 100, 34);
+  ctx.fillText("Success", width - 120, 34);
 
   ctx.fillStyle = "#f44336";
-  ctx.fillRect(width - 120, 42, 10, 10);
+  ctx.fillRect(width - 140, 42, 10, 10);
   ctx.fillStyle = "#ffffff";
-  ctx.fillText("Failure", width - 100, 52);
+  ctx.fillText("Failure", width - 120, 52);
+
+  ctx.strokeStyle = "#4dacff";
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(width - 140, 66);
+  ctx.lineTo(width - 130, 66);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("Total launches", width - 120, 70);
 }
 
 function animate() {
@@ -643,11 +662,6 @@ function onResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-
-  initChartCanvas();
-  const slider = document.getElementById("yearSlider");
-  const year = slider ? parseInt(slider.value, 10) : yearlyData[0].year;
-  drawLaunchChart(yearlyData, year, onYearClick);
 }
 
 main().catch((err) => {
