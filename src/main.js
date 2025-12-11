@@ -131,6 +131,11 @@ function initThree() {
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
+  controls.enableRotate = true;
+
+  controls.enablePan = true;
+  controls.screenSpacePanning = true;
+  controls.panSpeed = 1.2;
 
   globe = buildGlobe();
   scene.add(globe);
@@ -608,26 +613,25 @@ function drawSuccessFailureChart(data) {
 
   ctx.textAlign = "left";
 
-  ctx.fillStyle = "#4caf50";
-  ctx.fillRect(width - 100, 0, 10, 10);
-  ctx.fillStyle = "#ffffff";
-  ctx.fillText("Success", width - 80, 0);
-
-  ctx.fillStyle = "#f44336";
-  ctx.fillRect(width - 100, 20, 10, 10);
-  ctx.fillStyle = "#ffffff";
-  ctx.fillText("Failure", width - 80, 20);
-
   ctx.strokeStyle = "#4dacff";
   ctx.setLineDash([4, 4]);
   ctx.beginPath();
-  ctx.moveTo(width - 100, 45);
-  ctx.lineTo(width - 90, 45);
-
+  ctx.moveTo(width - 80, 5);
+  ctx.lineTo(width - 70, 5);
   ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillStyle = "#ffffff";
-  ctx.fillText("Total launches", width - 80, 40);
+  ctx.fillText("Total", width - 60, 0);
+
+  ctx.fillStyle = "#4caf50";
+  ctx.fillRect(width - 80, 20, 10, 10);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("Success", width - 60, 20);
+
+  ctx.fillStyle = "#f44336";
+  ctx.fillRect(width - 80, 40, 10, 10);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("Failure", width - 60, 40);
 }
 
 function aggregateAllTimeStats(data) {
@@ -799,25 +803,25 @@ function drawMonthlyChart(year) {
   ctx.textAlign = "left";
   ctx.font = "16px sans-serif";
 
-  ctx.fillStyle = "#4caf50";
-  ctx.fillRect(width - 120, 0, 10, 10);
-  ctx.fillStyle = "#ffffff";
-  ctx.fillText("Success", width - 104, 0);
-
-  ctx.fillStyle = "#f44336";
-  ctx.fillRect(width - 120, 18, 10, 10);
-  ctx.fillStyle = "#ffffff";
-  ctx.fillText("Failure", width - 104, 18);
-
   ctx.strokeStyle = "#4dacff";
   ctx.setLineDash([4, 4]);
   ctx.beginPath();
-  ctx.moveTo(width - 120, 40);
-  ctx.lineTo(width - 110, 40);
+  ctx.moveTo(width - 80, 12);
+  ctx.lineTo(width - 70, 12);
   ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillStyle = "#ffffff";
-  ctx.fillText("Total", width - 104, 34);
+  ctx.fillText("Total", width - 60, 7);
+
+  ctx.fillStyle = "#4caf50";
+  ctx.fillRect(width - 80, 30, 10, 10);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("Success", width - 60, 28);
+
+  ctx.fillStyle = "#f44336";
+  ctx.fillRect(width - 80, 50, 10, 10);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("Failure", width - 60, 48);
 }
 
 function startPlayback() {
