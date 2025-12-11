@@ -115,6 +115,9 @@ function initThree() {
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
   const container = document.getElementById("scene-container");
 
   container.appendChild(renderer.domElement);
@@ -140,6 +143,14 @@ function initLights() {
 
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
   scene.add(ambientLight);
+
+  dirLight.shadow.mapSize.width = 2048;
+  dirLight.shadow.mapSize.height = 2048;
+  dirLight.shadow.camera.near = 0.5;
+  dirLight.shadow.camera.far = 50;
+
+  dirLight.castShadow = true;
+  scene.add(dirLight);
 }
 
 function initRaycaster() {
@@ -191,23 +202,17 @@ function onClick(event) {
   mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
   mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-  camera.updateMatrixWorld();
-  const points = launchMarkersGroup.children[0];
-  if (!points) return;
-  points.updateMatrixWorld();
-
-  raycaster.params.Points.threshold = pixelRadiusToWorldDistance(
-    PICK_PIXEL_RADIUS,
-    new THREE.Vector3(0, 0, 0)
-  );
-
   raycaster.setFromCamera(mouse, camera);
-  const intersects = raycaster.intersectObject(points);
 
-  if (intersects.length === 0) return;
+  const intersects = raycaster.intersectObjects(
+    launchMarkersGroup.children,
+    true
+  );
+  if (!intersects.length) return;
 
-  const index = intersects[0].index;
-  const launch = points.userData?.launches?.[index];
+  const hit = intersects[0];
+  const launch = hit.object.userData;
+
   if (launch) showLaunchInfo(launch);
 }
 

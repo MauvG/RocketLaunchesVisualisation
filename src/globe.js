@@ -18,6 +18,9 @@ export function buildGlobe() {
   const earth = new THREE.Mesh(earthGeometry, earthMaterial);
   group.add(earth);
 
+  earth.castShadow = false;
+  earth.receiveShadow = true;
+
   const starGeo = new THREE.SphereGeometry(10, 64, 64);
   const starMat = new THREE.MeshBasicMaterial({
     map: textureLoader.load("textures/stars.png"),

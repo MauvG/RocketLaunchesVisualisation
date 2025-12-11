@@ -2,51 +2,58 @@ import * as THREE from "three";
 import { latLonToVector3 } from "./utils/geo.js";
 
 export function createLaunchMarkers(data, radius = 1.5) {
-  const positions = [];
-  const colors = [];
-  const launches = [];
-
+  const group = new THREE.Group();
   const successColor = new THREE.Color(0x00ff00);
   const failureColor = new THREE.Color(0xff0000);
+
+  const BAR_RADIUS = 0.005;
 
   data.forEach((d) => {
     let lat = parseFloat(d.Latitude);
     let lon = parseFloat(d.Longitude);
-
     if (isNaN(lat) || isNaN(lon)) return;
 
-    const jitter = 1;
+    const jitter = 2;
     lat += (Math.random() - 0.5) * jitter;
     lon += (Math.random() - 0.5) * jitter;
 
-    const pos = latLonToVector3(lat, lon, radius + 0.01);
+    const basePos = latLonToVector3(lat, lon, radius + 0.01);
 
-    positions.push(pos.x, pos.y, pos.z);
+    const barLength = d.MissionStatus === "Success" ? 0.2 : 0.1;
+    const tipPos = latLonToVector3(lat, lon, radius + 0.01 + barLength);
+
+    const cylGeo = new THREE.CylinderGeometry(
+      BAR_RADIUS,
+      BAR_RADIUS,
+      barLength,
+      8
+    );
 
     const color = d.MissionStatus === "Success" ? successColor : failureColor;
 
-    colors.push(color.r, color.g, color.b);
-    launches.push(d);
+    const mat = new THREE.MeshStandardMaterial({
+      color,
+      roughness: 0.6,
+      metalness: 0.1,
+    });
+
+    const cylinder = new THREE.Mesh(cylGeo, mat);
+
+    const midpoint = new THREE.Vector3()
+      .addVectors(basePos, tipPos)
+      .multiplyScalar(0.5);
+
+    cylinder.position.copy(midpoint);
+
+    cylinder.lookAt(tipPos);
+    cylinder.rotateX(Math.PI / 2);
+
+    cylinder.castShadow = true;
+    cylinder.receiveShadow = true;
+
+    cylinder.userData = d;
+    group.add(cylinder);
   });
 
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute(
-    "position",
-    new THREE.Float32BufferAttribute(positions, 3)
-  );
-  geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
-
-  const material = new THREE.PointsMaterial({
-    size: 0.01,
-    map: new THREE.TextureLoader().load("/textures/circle.png"),
-    transparent: true,
-    alphaTest: 0.5,
-    vertexColors: true,
-    depthWrite: false,
-  });
-
-  const points = new THREE.Points(geometry, material);
-  points.userData.launches = launches;
-
-  return points;
+  return group;
 }
