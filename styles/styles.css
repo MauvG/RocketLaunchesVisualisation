@@ -3,53 +3,125 @@ body {
   background-color: #000;
   font-family: Arial, sans-serif;
   color: white;
+  overflow: hidden;
 }
 
 #app {
-  display: flex;
-  flex-direction: column;
   height: 100vh;
-}
-
-#scene-container {
-  flex: 1;
+  width: 100vw;
   position: relative;
 }
 
+#scene-container {
+  height: min(70vh, 60vh + 5vw);
+  width: 100%;
+  position: relative;
+}
+
+#allTimeLeft {
+  position: absolute;
+  top: 50%;
+  left: clamp(10px, 2vw, 40px);
+  transform: translateY(-50%);
+  background: #0a0a0a;
+  padding: clamp(6px, 1vw, 12px);
+  border: 1px solid #222;
+  max-width: clamp(300px, 30vw, 600px);
+}
+
+#allTimeLeft canvas {
+  width: 100% !important;
+  height: auto !important;
+}
+
+#allTimeRight {
+  position: absolute;
+  top: 50%;
+  right: clamp(10px, 2vw, 40px);
+  transform: translateY(-50%);
+  width: clamp(240px, 20vw, 400px);
+  background: #0a0a0a;
+  padding: clamp(6px, 1vw, 12px);
+  border: 1px solid #222;
+}
+
+.statsTitle {
+  font-size: clamp(16px, 1.3vw, 24px);
+  margin-bottom: 10px;
+}
+
+.statRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: clamp(12px, 1vw, 18px);
+}
+
+.label {
+  color: #aaa;
+}
+
+.divider {
+  border-bottom: 1px solid #333;
+  margin: 8px 0;
+}
+
 #ui-panel {
-  padding: 16px;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: clamp(22vh, 28vh, 30vh);
   background: #050505;
   border-top: 1px solid #222;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 #time-ui {
-  width: 60%;
-  margin: 0 auto 16px auto;
-  text-align: center;
+  height: 22%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin-top: clamp(4px, 1vh, 18px);
 }
 
 #yearSlider {
-  width: 100%;
+  width: clamp(40%, 50%, 60%);
 }
 
 #yearLabel {
+  font-size: clamp(12px, 1vw, 20px);
   margin-top: 6px;
-  font-size: 14px;
 }
 
-#charts {
+#bottomCharts {
+  height: 78%;
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 16px;
-  max-width: 1200px;
-  margin: 0 auto;
+  gap: clamp(8px, 1vw, 20px);
+  padding: 0 clamp(6px, 1vw, 20px);
 }
 
-#charts canvas {
-  background: #0b0b0b;
-  border-radius: 6px;
-  padding: 6px;
+.bottomChart {
+  border: 1px solid #222;
+  background: #0a0a0a;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  width: clamp(260px, 30vw, 600px);
+  height: clamp(150px, 20vh, 250px);
+  box-sizing: border-box;
+}
+
+.bottomChart canvas {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 #infoPanel {
@@ -59,62 +131,23 @@ body {
   background: rgba(0, 0, 0, 0.85);
   color: white;
   padding: 12px;
-  max-width: 280px;
+  width: clamp(180px, 20vw, 260px);
   display: none;
   z-index: 10;
+  border: 1px solid #333;
 }
 
-#stats {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 8px;
-  margin-bottom: 8px;
+@media (max-height: 900px) {
+  #scene-container {
+    height: 60vh;
+  }
 }
 
-.stat {
-  background: #111;
-  border: 1px solid #222;
-  padding: 6px;
-  text-align: center;
-  font-size: 11px;
-}
-
-#statsPanel {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  width: 260px;
-  background: rgba(5, 5, 5, 0.9);
-  border: 1px solid #222;
-  padding: 12px;
-  font-size: 11px;
-  z-index: 9;
-}
-
-.statsTitle {
-  text-align: center;
-  font-size: 12px;
-  font-weight: bold;
-  margin-bottom: 8px;
-  letter-spacing: 0.5px;
-}
-
-.statRow {
-  display: flex;
-  justify-content: space-between;
-  margin: 4px 0;
-}
-
-.statRow .label {
-  color: #aaa;
-}
-
-.statRow .value {
-  color: #fff;
-  font-weight: bold;
-}
-
-.divider {
-  border-top: 1px solid #222;
-  margin: 6px 0;
+@media (max-height: 800px) {
+  #scene-container {
+    height: 55vh;
+  }
+  #ui-panel {
+    height: 28vh;
+  }
 }

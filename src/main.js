@@ -8,6 +8,7 @@ let scene, camera, renderer, globe;
 let raycaster, mouse;
 let launchMarkersGroup;
 let launchData = [];
+let monthlyChart = null;
 
 const PICK_PIXEL_RADIUS = 8;
 
@@ -41,6 +42,8 @@ export default async function main() {
 
     const byCompany = aggregateLaunchesByCompany(launchData, year);
     drawCompanyChart(byCompany);
+
+    drawMonthlyChart(year);
   }
 
   const initialYear = (slider && parseInt(slider.value, 10)) || 2000;
@@ -277,7 +280,7 @@ function drawCountryChart(data) {
   ctx.lineTo(padding.left + chartW, padding.top + chartH);
   ctx.stroke();
 
-  ctx.font = "11px sans-serif";
+  ctx.font = "16px sans-serif";
   ctx.fillStyle = "#ffffff";
   ctx.textAlign = "right";
   ctx.textBaseline = "middle";
@@ -313,7 +316,7 @@ function drawCountryChart(data) {
   });
 
   ctx.fillStyle = "#ffffff";
-  ctx.font = "11px sans-serif";
+  ctx.font = "16px sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
 
@@ -321,13 +324,13 @@ function drawCountryChart(data) {
     ctx.fillText(d.country, xScale(i), padding.top + chartH + 6);
   });
 
-  ctx.font = "12px sans-serif";
+  ctx.font = "16px sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
   ctx.fillText("Countries with most launches", width / 2, 6);
 
   ctx.textAlign = "left";
-  ctx.font = "11px sans-serif";
+  ctx.font = "16px sans-serif";
 
   ctx.fillStyle = "#4caf50";
   ctx.fillRect(width - 120, 16, 10, 10);
@@ -399,7 +402,7 @@ function drawCompanyChart(data) {
   ctx.lineTo(padding.left + chartW, padding.top + chartH);
   ctx.stroke();
 
-  ctx.font = "11px sans-serif";
+  ctx.font = "16px sans-serif";
   ctx.fillStyle = "#ffffff";
   ctx.textAlign = "right";
   ctx.textBaseline = "middle";
@@ -434,7 +437,7 @@ function drawCompanyChart(data) {
   });
 
   ctx.fillStyle = "#ffffff";
-  ctx.font = "11px sans-serif";
+  ctx.font = "16px sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
 
@@ -442,13 +445,13 @@ function drawCompanyChart(data) {
     ctx.fillText(d.company, xCenter(i), padding.top + chartH + 6);
   });
 
-  ctx.font = "12px sans-serif";
+  ctx.font = "16px sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
   ctx.fillText("Comapnies with most launches", width / 2, 6);
 
   ctx.textAlign = "left";
-  ctx.font = "11px sans-serif";
+  ctx.font = "16px sans-serif";
 
   ctx.fillStyle = "#4caf50";
   ctx.fillRect(width - 120, 16, 10, 10);
@@ -517,7 +520,7 @@ function drawSuccessFailureChart(data) {
   ctx.lineTo(padding + chartW, padding + chartH);
   ctx.stroke();
 
-  ctx.font = "11px sans-serif";
+  ctx.font = "16px sans-serif";
   ctx.fillStyle = "#ffffff";
   ctx.textAlign = "right";
   ctx.textBaseline = "middle";
@@ -578,7 +581,7 @@ function drawSuccessFailureChart(data) {
   ctx.stroke();
   ctx.setLineDash([]);
 
-  ctx.font = "12px sans-serif";
+  ctx.font = "16px sans-serif";
   ctx.fillText("Total launches for all years", width / 2, 0);
 
   ctx.textAlign = "left";
@@ -650,6 +653,149 @@ function getTopMetrics(map, minLaunches = 30) {
       }))
       .sort((a, b) => b.rate - a.rate)[0],
   };
+}
+
+function getMonthlyStatsForYear(year) {
+  const months = Array(12)
+    .fill(0)
+    .map(() => ({
+      launches: 0,
+      success: 0,
+      failure: 0,
+    }));
+
+  launchData.forEach((l) => {
+    const y = new Date(l.Date).getFullYear();
+    if (y !== year) return;
+
+    const m = new Date(l.Date).getMonth();
+    months[m].launches++;
+
+    if (l.MissionStatus === "Success") months[m].success++;
+    else months[m].failure++;
+  });
+
+  return months;
+}
+
+function drawMonthlyChart(year) {
+  const canvas = document.getElementById("monthlyChart");
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  const { width, height } = canvas;
+
+  ctx.clearRect(0, 0, width, height);
+
+  const padding = 40;
+  const chartW = width - padding * 2;
+  const chartH = height - padding * 2;
+
+  const stats = getMonthlyStatsForYear(year);
+
+  const labels = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
+  const launches = stats.map((s) => s.launches);
+  const success = stats.map((s) => s.success);
+  const failure = stats.map((s) => s.failure);
+  const maxValue = Math.max(...launches, ...success, ...failure, 1);
+
+  const xScale = (i) => padding + (i / 11) * chartW;
+  const yScale = (v) => padding + chartH - (v / maxValue) * chartH;
+
+  ctx.strokeStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.moveTo(padding, padding);
+  ctx.lineTo(padding, padding + chartH);
+  ctx.lineTo(padding + chartW, padding + chartH);
+  ctx.stroke();
+
+  ctx.font = "16px sans-serif";
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+
+  for (let i = 0; i <= 4; i++) {
+    const val = Math.round((maxValue / 4) * i);
+    const y = yScale(val);
+
+    ctx.fillText(val, padding - 6, y);
+
+    ctx.strokeStyle = "#222";
+    ctx.beginPath();
+    ctx.moveTo(padding, y);
+    ctx.lineTo(padding + chartW, y);
+    ctx.stroke();
+  }
+
+  function drawLine(values, color, width = 2, dashed = false) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+
+    if (dashed) ctx.setLineDash([4, 4]);
+    else ctx.setLineDash([]);
+
+    ctx.beginPath();
+    values.forEach((v, i) => {
+      const x = xScale(i);
+      const y = yScale(v);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  drawLine(success, "#4caf50", 2);
+  drawLine(failure, "#f44336", 2);
+  drawLine(launches, "#4dacff", 2, true);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+
+  labels.forEach((label, i) => {
+    ctx.fillText(label, xScale(i), padding + chartH + 6);
+  });
+
+  ctx.font = "16px sans-serif";
+  ctx.fillText(`Launches per month for ${year}`, width / 2, 0);
+
+  ctx.textAlign = "left";
+  ctx.font = "16px sans-serif";
+
+  ctx.fillStyle = "#4caf50";
+  ctx.fillRect(width - 120, 0, 10, 10);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("Success", width - 104, 0);
+
+  ctx.fillStyle = "#f44336";
+  ctx.fillRect(width - 120, 18, 10, 10);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("Failure", width - 104, 18);
+
+  ctx.strokeStyle = "#4dacff";
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(width - 120, 40);
+  ctx.lineTo(width - 110, 40);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("Total", width - 104, 34);
 }
 
 function animate() {
