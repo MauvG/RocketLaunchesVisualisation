@@ -163,15 +163,24 @@ body {
   }
 }
 
+#playAndYear {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
 #playButton {
-  margin-top: 10px;
   padding: 6px 14px;
   background: #111;
   color: white;
   border: 1px solid #333;
   cursor: pointer;
+  line-height: 1;
+  margin-top: 0;
 }
 
-#playButton:hover {
-  background: #222;
+#yearLabel {
+  font-size: clamp(12px, 1vw, 20px);
+  margin-top: 0;
 }
