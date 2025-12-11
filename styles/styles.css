@@ -46,7 +46,7 @@ body {
 }
 
 .statsTitle {
-  font-size: clamp(16px, 1.3vw, 24px);
+  font-size: clamp(12px, 1.3vw, 20px);
   margin-bottom: 10px;
 }
 
@@ -54,7 +54,7 @@ body {
   display: flex;
   justify-content: space-between;
   margin-bottom: 6px;
-  font-size: clamp(12px, 1vw, 18px);
+  font-size: clamp(12px, 1vw, 16px);
 }
 
 .label {
@@ -150,4 +150,17 @@ body {
   #ui-panel {
     height: 28vh;
   }
+}
+
+#playButton {
+  margin-top: 10px;
+  padding: 6px 14px;
+  background: #111;
+  color: white;
+  border: 1px solid #333;
+  cursor: pointer;
+}
+
+#playButton:hover {
+  background: #222;
 }

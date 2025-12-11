@@ -8,7 +8,8 @@ let scene, camera, renderer, globe;
 let raycaster, mouse;
 let launchMarkersGroup;
 let launchData = [];
-let monthlyChart = null;
+let isPlaying = false;
+let playInterval = null;
 
 const PICK_PIXEL_RADIUS = 8;
 
@@ -26,7 +27,12 @@ export default async function main() {
   scene.add(launchMarkersGroup);
 
   const slider = document.getElementById("yearSlider");
+  window.yearSlider = slider;
+
   const label = document.getElementById("yearLabel");
+
+  const playButton = document.getElementById("playButton");
+  window.playButton = playButton;
 
   function onYearClick(year) {
     year = Number(year);
@@ -45,6 +51,8 @@ export default async function main() {
 
     drawMonthlyChart(year);
   }
+
+  window.onYearClick = onYearClick;
 
   const initialYear = (slider && parseInt(slider.value, 10)) || 2000;
 
@@ -90,6 +98,15 @@ export default async function main() {
   document.getElementById("bestCompany").textContent = `${
     o.bestSuccessRate.name
   } (${(o.bestSuccessRate.rate * 100).toFixed(1)}%)`;
+
+  playButton.addEventListener("click", () => {
+    if (isPlaying) stopPlayback();
+    else startPlayback();
+  });
+
+  yearSlider.addEventListener("input", () => {
+    if (isPlaying) stopPlayback();
+  });
 }
 
 function initThree() {
@@ -327,7 +344,7 @@ function drawCountryChart(data) {
   ctx.font = "16px sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
-  ctx.fillText("Countries with most launches", width / 2, 6);
+  ctx.fillText("Countries with most launches", width / 2, 10);
 
   ctx.textAlign = "left";
   ctx.font = "16px sans-serif";
@@ -448,7 +465,7 @@ function drawCompanyChart(data) {
   ctx.font = "16px sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
-  ctx.fillText("Comapnies with most launches", width / 2, 6);
+  ctx.fillText("Comapnies with most launches", width / 2, 10);
 
   ctx.textAlign = "left";
   ctx.font = "16px sans-serif";
@@ -772,7 +789,7 @@ function drawMonthlyChart(year) {
   });
 
   ctx.font = "16px sans-serif";
-  ctx.fillText(`Launches per month for ${year}`, width / 2, 0);
+  ctx.fillText(`Launches per month for ${year}`, width / 2, 10);
 
   ctx.textAlign = "left";
   ctx.font = "16px sans-serif";
@@ -796,6 +813,36 @@ function drawMonthlyChart(year) {
   ctx.setLineDash([]);
   ctx.fillStyle = "#ffffff";
   ctx.fillText("Total", width - 104, 34);
+}
+
+function startPlayback() {
+  if (isPlaying) return;
+
+  isPlaying = true;
+  playButton.textContent = "Stop";
+
+  playInterval = setInterval(() => {
+    let year = parseInt(yearSlider.value);
+    const maxYear = parseInt(yearSlider.max);
+
+    if (year >= maxYear) {
+      stopPlayback();
+      return;
+    }
+
+    yearSlider.value = year + 1;
+    onYearClick(year + 1);
+  }, 300);
+}
+
+function stopPlayback() {
+  isPlaying = false;
+  playButton.textContent = "Play";
+
+  if (playInterval) {
+    clearInterval(playInterval);
+    playInterval = null;
+  }
 }
 
 function animate() {

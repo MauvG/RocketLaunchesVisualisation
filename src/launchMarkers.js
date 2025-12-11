@@ -37,7 +37,7 @@ export function createLaunchMarkers(data, radius = 1.5) {
   geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
 
   const material = new THREE.PointsMaterial({
-    size: 0.05,
+    size: 0.01,
     map: new THREE.TextureLoader().load("/textures/circle.png"),
     transparent: true,
     alphaTest: 0.5,
