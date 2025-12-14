@@ -4,6 +4,12 @@
 
 - https://global-rocket-launches.netlify.app/
 
+## Run Locally
+
+- In terminal run:
+  - npm install
+  - npm run dev
+
 ## Sources
 
 - Dataset from: https://mavenanalytics.io/data-playground/space-missions
